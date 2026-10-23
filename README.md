@@ -208,6 +208,9 @@ The runnable implementation is in:
 keyvault-proxy/
 ```
 
-Local CA material is under `ca/`. The repository-wide `.gitignore` excludes the
-entire CA directory, generated TLS material, Azure access tokens, and captured
-traffic so that `git add .` does not stage those sensitive lab artifacts.
+The published eMudhra intermediate certificates and corresponding compromised
+private keys used by this lab are intentionally tracked under
+`ca/intermediate/` so the experiment is reproducible. They must be used only in
+an isolated lab. Locally generated leaf material under `ca/website/`, runtime
+TLS material, Azure access tokens, and captured traffic remain excluded by the
+repository-wide `.gitignore`.

@@ -1,5 +1,8 @@
-# Local CA hierarchy and private keys. Keep all CA material out of Git.
-/ca/
+# The published eMudhra intermediate CA pairs used by this lab are tracked.
+# Keep locally generated leaf certificates and keys out of Git.
+/ca/*
+!/ca/intermediate/
+!/ca/intermediate/**
 
 # Generated runtime configuration and TLS material.
 **/.env
