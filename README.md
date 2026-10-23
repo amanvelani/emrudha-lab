@@ -33,12 +33,12 @@ flowchart LR
     P[Local HTTPS inspection proxy]
     A[Azure Key Vault]
 
-    C -->|TLS connection 1<br/>locally issued certificate| P
-    P -->|TLS connection 2<br/>real Azure certificate| A
+    C -->|"TLS connection 1<br>locally issued certificate"| P
+    P -->|"TLS connection 2<br>real Azure certificate"| A
     A -->|401 challenge or 200 response| P
     P -->|same status and body| C
 
-    D[Client-only DNS override<br/>vault hostname → proxy IP]
+    D["Client-only DNS override<br>vault hostname to proxy IP"]
     D -.-> C
 ```
 
@@ -70,7 +70,7 @@ sequenceDiagram
     C->>C: Validate SAN, dates, signatures, and trusted root
 
     C->>P: GET key request without Authorization
-    P->>A: New TLS handshake; verify the real Azure certificate
+    P->>A: New TLS handshake and verify the real Azure certificate
     P->>A: Forward GET request
     A-->>P: 401 + WWW-Authenticate challenge
     P-->>C: Forward the 401 challenge
@@ -80,7 +80,8 @@ sequenceDiagram
     P->>A: New verified TLS connection
     P->>A: Forward GET with the identical Bearer token
     A-->>P: 200 + public-key JSON
-    P->>P: Persist full HTTP exchange and key JSON<br/>with credentials redacted
+    P->>P: Persist full HTTP exchange and key JSON
+    Note right of P: Credentials are masked in logs
     P-->>C: Return the same status and response body
 ```
 
