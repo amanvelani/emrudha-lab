@@ -14,6 +14,40 @@ This did not break TLS encryption. The experiment worked because the client
 trusted the certificate chain presented by the proxy and because DNS resolution
 inside the client container was deliberately redirected to that proxy.
 
+## Broader implications and the 2025 exposure window
+
+**This Key Vault lab demonstrates one possible man-in-the-middle (MITM)
+scenario. The underlying risk extends to outbound HTTPS connections to other
+services, even when the real service uses a certificate from a different CA.**
+An attacker holding an affected CA key could forge a certificate for the target
+hostname and intercept traffic if they could redirect or control its network
+path and the client accepted the forged chain. APIs, authentication services,
+package downloads, and other HTTPS destinations could therefore be targets;
+the destination does not need to be an eMudhra customer.
+[Google's incident advisory](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/)
+describes this ability to impersonate arbitrary websites against clients that
+still trust the affected CAs.
+
+The potential exposure dates back to **2025**, rather than beginning with public
+disclosure in October 2026. The affected keys originated in the **April 30, 2025**
+key-generation ceremony, according to
+[Mozilla's incident investigation](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c5).
+For an individual client, the potential exposure window began when a usable
+affected chain became trusted and lasted until effective protections prevented
+its acceptance. This is an inference about possible exposure, not evidence that
+connections were actually intercepted during that period.
+
+This does **not** mean every outbound connection since 2025 was exploitable.
+The attack requires an accepted TLS certificate chain and traffic interception;
+effective distrust or revocation, certificate pinning, and Certificate
+Transparency (CT) enforcement can prevent acceptance. Google reports that no
+TLS certificates chaining to the affected TLS intermediates were logged in CT
+before its block, preventing their use against CT-enforcing clients such as
+Chrome. The CA-key compromise also does not by itself decrypt previously
+recorded TLS sessions that used forward secrecy. This lab establishes the
+specific live interception demonstrated here, not historical exploitation of
+other clients or services.
+
 ## Architecture
 
 The setup uses two Colima containers:
