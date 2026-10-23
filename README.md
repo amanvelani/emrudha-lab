@@ -236,7 +236,7 @@ validation in this specific image and configuration.
 
 ## Walkthrough video
 
-[![Authenticated Key Vault walkthrough preview](docs/media/authenticated-walkthrough-preview.png)](docs/media/authenticated-walkthrough.mp4)
+[![Animated authenticated Key Vault walkthrough](docs/media/authenticated-walkthrough.gif)](docs/media/authenticated-walkthrough.mp4)
 
 [Download or play the 90-second authenticated walkthrough](docs/media/authenticated-walkthrough.mp4). It is a paced terminal-style rendering of selected output from a live `python3 keyvault-proxy/walkthrough.py --no-pause` run. It shows the already-public compromised eMudhra intermediate CA private key, the authenticated SDK request, and the complete public Key Vault JSON captured by the proxy and returned to the SDK. The long RSA modulus is wrapped across video lines for readability, with every character retained. Bearer tokens are masked as `Bearer *****` throughout.
 
