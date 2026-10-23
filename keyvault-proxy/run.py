@@ -16,11 +16,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--probe", action="store_true", help="TLS and unauthenticated forwarding only; no Azure token")
     parser.add_argument("--watch", action="store_true", help="Repeat SDK reads every 60 seconds instead of a single read")
+    parser.add_argument("--skip-setup", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     os.chdir(HERE)
     os.umask(0o077)
-    if not Path(".env").exists():
-        raise SystemExit("Run python3 setup.py first.")
+    if not args.skip_setup:
+        print("Generating a fresh seven-day TLS certificate and local configuration.")
+        subprocess.run([sys.executable, str(HERE / "setup.py")], check=True)
     network_ids = subprocess.check_output(["docker", "--context", "colima", "network", "ls", "-q"], text=True).split()
     if network_ids:
         networks = json.loads(subprocess.check_output(["docker", "--context", "colima", "network", "inspect", *network_ids]))

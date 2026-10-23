@@ -20,19 +20,17 @@ public portion. No key or vault is modified. The proxy is not published to host 
 ## Run
 
 ```bash
-cd /Users/aman/git/lab/keyvault-proxy
+cd /path/to/emrudha-lab/keyvault-proxy
 
 # Only needed if Colima is stopped.
 colima start
 
-# Generate a seven-day leaf for the exact vault hostname using the existing
-# intermediate pair; write local .env and output directories. No trust is installed.
-python3 setup.py
-
-# Optional: verify the existing image trust and forwarding without credentials.
+# One command generates a fresh seven-day TLS certificate, prepares the local
+# configuration, and tests image trust and forwarding without Azure credentials.
 python3 run.py --probe
 
-# Refresh a token from your current Azure CLI login and make one SDK GetKeyAsync call.
+# The authenticated form also generates TLS, then refreshes a token from your
+# current Azure CLI login and makes one SDK GetKeyAsync call.
 python3 run.py
 
 # Inspect container state and the saved request/response logs.
@@ -43,7 +41,10 @@ cat logs/client/events.jsonl
 cat logs/client/response.json
 ```
 
-The normal client completes and exits after one read. The proxy remains running.
+`run.py` invokes `setup.py` on every run, so no separate setup command is needed.
+To generate the TLS files and local configuration without starting containers,
+run `python3 setup.py`. The normal client completes and exits after one read. The
+proxy remains running.
 `python3 run.py --watch` keeps the client running and reads once per minute. Tokens
 are not automatically refreshed; rerun that command before the CLI token expires.
 
@@ -51,6 +52,26 @@ are not automatically refreshed; rerun that command before the CLI token expires
 # Stop and remove the two containers and their networks. Host logs remain.
 docker --context colima compose down
 ```
+
+## Guided terminal walkthrough
+
+For an explained terminal UI that pauses at every stage, inspects both
+certificates, runs the containers, and prints the captured request and Key Vault
+public-key response with the bearer token masked:
+
+```bash
+# Authenticated example using the current Azure CLI login.
+python3 walkthrough.py
+
+# Credential-free TLS and 401 challenge example.
+python3 walkthrough.py --probe
+
+# Show all steps without pauses.
+python3 walkthrough.py --no-pause
+```
+
+The walkthrough never reads or prints `secrets/token.json`. Before displaying
+saved traffic, it applies an additional `Bearer *****` redaction pass.
 
 ## What is trusted
 
@@ -80,8 +101,8 @@ mcr.microsoft.com/dotnet/aspnet@sha256:86b0047e3dbc676dc36e588f569c8dbb52ac6bf6d
 The requested October 16 moving-tag snapshot was not established. This is a
 pre-cutoff image. At setup, `8.0-azurelinux3.0` and `8.0.32-azurelinux3.0` pointed
 to an image built October 22. `logs/image-selection.json` records the selection.
-If you have the exact historical digest, set `CLIENT_BASE` when running `setup.py`;
-then rebuild through `run.py`. No package manager or CA update runs in the final
+If you have the exact historical digest, set `CLIENT_BASE` when running `run.py`.
+No package manager or CA update runs in the final
 client image. The build stage uses the .NET 8 SDK; the client package is
 `Azure.Security.KeyVault.Keys` 4.10.2.
 
@@ -109,8 +130,9 @@ content to the client. If persistence fails, it returns a proxy error instead of
 the Key Vault response. Redirects are not automatically followed. Token,
 TLS, and log directories are excluded from Docker build contexts and Git.
 
-The existing intermediate files and the earlier `vault.azure.net` leaf are left
-in place. `setup.py` writes separate leaf material under this project's `tls/`.
+The checked-in intermediate files and the earlier `vault.azure.net` leaf are left
+in place. `setup.py` writes separate leaf material under this project's ignored
+`tls/` directory.
 
 ## Validation
 
