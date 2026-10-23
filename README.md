@@ -200,6 +200,10 @@ system, an application with certificate pinning, or a client with explicit
 online revocation checks would behave. It demonstrates default .NET/Linux trust
 validation in this specific image and configuration.
 
+## Walkthrough video
+
+[Download or play the 53-second credential-free probe video](docs/media/credential-free-probe.mp4). It is a paced terminal-style rendering of selected output from a live `python3 keyvault-proxy/walkthrough.py --probe --no-pause` run. The probe validated the client certificate chain, verified the proxy's upstream TLS connection, and received the expected HTTP `401` without forwarding an authorization header.
+
 ## Repository layout
 
 The runnable implementation is in:
