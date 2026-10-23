@@ -1,5 +1,6 @@
 FROM python:3.13-slim
 WORKDIR /app
 COPY app/proxy.py ./
+RUN chmod 0644 /app/proxy.py
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 ENTRYPOINT ["python", "proxy.py"]

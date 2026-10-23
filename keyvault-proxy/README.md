@@ -38,6 +38,7 @@ python3 run.py
 # Inspect container state and the saved request/response logs.
 docker --context colima compose ps -a
 cat logs/proxy/traffic.jsonl
+cat logs/proxy/latest-key-response.json
 cat logs/client/events.jsonl
 cat logs/client/response.json
 ```
@@ -88,7 +89,9 @@ client image. The build stage uses the .NET 8 SDK; the client package is
 
 | File | Contents |
 | --- | --- |
-| `logs/proxy/traffic.jsonl` | Request and response headers, response body, status, verified upstream peer IP and timing; authentication/cookie values redacted |
+| `logs/proxy/traffic.jsonl` | Complete decrypted HTTP request and response, TLS metadata, status, verified upstream peer IP and timing; bearer token shown as `*****` |
+| `logs/proxy/latest-key-response.json` | Pretty-printed full Key Vault JSON written by the proxy before it replies to the client |
+| `logs/proxy/key-responses/<request-id>.json` | Per-request archive of each successful Key Vault JSON response |
 | `logs/client/events.jsonl` | Resolved addresses, platform certificate-validation results, SDK result or error |
 | `logs/client/response.json` | Latest successful public-key JSON response |
 | `secrets/token.json` | Short-lived token from Azure CLI, mode 0600; mounted only into the client |
@@ -98,7 +101,12 @@ client image. The build stage uses the .NET 8 SDK; the client package is
 The Azure CLI account directory and the CA private key are not mounted into either
 container. The token is not placed in process arguments or environment variables.
 The proxy copies the Authorization header unchanged to the fixed Azure endpoint;
-its filesystem logs redact it. Redirects are not automatically followed. Token,
+its filesystem logs store that header as `Bearer *****`. If the token appears in
+another header, response body, or error message, it is replaced with `*****` before
+the write. The proxy flushes and `fsync`s the redacted traffic
+record, then writes the full public-key JSON, before sending response headers or
+content to the client. If persistence fails, it returns a proxy error instead of
+the Key Vault response. Redirects are not automatically followed. Token,
 TLS, and log directories are excluded from Docker build contexts and Git.
 
 The existing intermediate files and the earlier `vault.azure.net` leaf are left
@@ -110,9 +118,10 @@ in place. `setup.py` writes separate leaf material under this project's `tls/`.
 python3 -m unittest discover -s tests -v
 ```
 
-Seven tests cover identical-token forwarding and response preservation, log
-redaction, authentication challenges, wrong-host and wrong-key rejection,
-upstream TLS failures, redirect handling, and the response-size limit.
+Eight tests cover identical-token forwarding and response preservation, masked
+token logging, full key-response persistence before client delivery,
+authentication challenges, wrong-host and wrong-key rejection, upstream TLS
+failures, redirect handling, and the response-size limit.
 
 The live credential-free probe returned Azure's 401. The authenticated SDK read
 returned 200, and the client JSON matched the proxy's captured response. Current

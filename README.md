@@ -80,8 +80,8 @@ sequenceDiagram
     P->>A: New verified TLS connection
     P->>A: Forward GET with the identical Bearer token
     A-->>P: 200 + public-key JSON
+    P->>P: Persist full HTTP exchange and key JSON<br/>with credentials redacted
     P-->>C: Return the same status and response body
-    P->>P: Log request and response with credentials redacted
 ```
 
 ### 1. Client-to-proxy TLS handshake
@@ -140,9 +140,14 @@ verified TLS connection to Azure.
 
 ### 4. Response path
 
-Azure authenticates the token and returns the requested key's public data. The
-proxy records a redacted representation of the exchange and returns the same
-HTTP status and response body to the SDK client.
+Azure authenticates the token and returns the requested key's public data. Before
+replying to the SDK, the proxy persists the complete decrypted HTTP exchange. The
+authorization header is logged as `Bearer *****`, and any occurrence of the token
+elsewhere is replaced with `*****`. It also saves the full, pretty-printed
+key JSON as `logs/proxy/latest-key-response.json` and archives it by request ID.
+Only after those writes succeed does it return the same HTTP status and response
+body to the SDK client. If persistence fails, the proxy returns an error instead
+of forwarding the Key Vault response.
 
 `GetKeyAsync` returns only the public portion and metadata for the Key Vault key.
 The private key is not exported.
@@ -163,7 +168,9 @@ The live run established all of the following:
 - The proxy independently verified Azure's genuine TLS certificate.
 - Azure returned HTTP `200`.
 - The JSON received by the SDK matched the response captured by the proxy.
-- The bearer-token value was absent from the saved logs.
+- The bearer-token value was absent from the saved logs and represented as
+  `Bearer *****` in the captured request.
+- The full key response was stored on the proxy before delivery to the client.
 
 ## Security boundaries
 

@@ -95,6 +95,31 @@ class ProxyTests(unittest.TestCase):
         self.assertNotIn(token, logged)
         self.assertNotIn("private-cookie", logged)
         self.assertNotIn("client-private-cookie", logged)
+        latest = self.log.parent / "latest-key-response.json"
+        self.assertTrue(latest.is_file())
+        self.assertNotIn(token, latest.read_text())
+        self.assertEqual(json.loads(latest.read_text()), {"echo": "*****"})
+        self.assertEqual(entries[0]["request"]["headers"]["Authorization"], "Bearer *****")
+        self.assertEqual(entries[0]["request"]["headers"]["Cookie"], "*****")
+
+    def test_full_key_response_is_persisted_before_client_response_headers(self):
+        key = {"key": {"kid": "https://example/keys/labkey/version", "kty": "RSA",
+                       "n": "full-public-modulus", "e": "AQAB"},
+               "attributes": {"enabled": True}}
+        body = json.dumps(key).encode()
+        self.upstream.response = FakeResponse(200, body)
+        client = http.client.HTTPConnection(*self.server.server_address, timeout=5)
+        client.request("GET", proxy.TARGET_PATH, headers={"Host": proxy.TARGET_HOST})
+        response = client.getresponse()
+        latest = self.log.parent / "latest-key-response.json"
+        archives = list((self.log.parent / "key-responses").glob("*.json"))
+        self.assertTrue(latest.is_file())
+        self.assertEqual(len(archives), 1)
+        self.assertEqual(json.loads(latest.read_text()), key)
+        self.assertEqual(json.loads(archives[0].read_text()), key)
+        self.assertTrue(self.entries()[0]["persisted_before_client_response"])
+        self.assertEqual(response.read(), body)
+        client.close()
 
     def test_auth_challenge_reaches_client_without_an_added_token(self):
         challenge = 'Bearer authorization="https://login.microsoftonline.com/example", resource="https://vault.azure.net"'
