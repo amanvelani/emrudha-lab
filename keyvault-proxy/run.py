@@ -53,7 +53,7 @@ def main():
     env["TLS_PROBE_ONLY"] = "true" if args.probe else "false"
     env["RUN_ONCE"] = "false" if args.watch else "true"
     command = ["docker", "--context", "colima", "compose"]
-    subprocess.run([*command, "up", "-d", "--build", "server"], env=env, check=True)
+    subprocess.run([*command, "up", "-d", "--build", "--force-recreate", "server"], env=env, check=True)
     subprocess.run([*command, "up", "-d", "--build", "--force-recreate", "service"], env=env, check=True)
     if not args.watch:
         container = subprocess.check_output([*command, "ps", "-aq", "service"], env=env, text=True).strip()

@@ -18,6 +18,7 @@ CA_CERTIFICATE = (
     HERE.parent
     / "ca/intermediate/CN=EM DV TLS CA - G3B,O=eMudhra BV,C=NL.pem"
 )
+CA_PRIVATE_KEY = CA_CERTIFICATE.with_suffix(".key")
 TOKEN_PATTERN = re.compile(
     r"(?i)(Bearer\s+)(?!\*{5})(?!authorization=)[A-Za-z0-9._~+/=-]+"
 )
@@ -136,12 +137,20 @@ def main():
         2,
         "Inspect the checked-in intermediate CA",
         "The proxy leaf will be signed by the published eMudhra intermediate pair. "
-        "Only certificate metadata is printed; private-key bytes are never displayed.",
+        "This step shows its certificate metadata and already-public compromised "
+        "private key. Possession of this CA key lets the lab sign the proxy leaf.",
     )
     terminal.command([
         "openssl", "x509", "-in", CA_CERTIFICATE, "-noout", "-subject", "-issuer",
         "-serial", "-dates", "-fingerprint", "-sha256",
     ])
+    if args.dry_run:
+        print(f"The already-public compromised intermediate private key would be displayed from {CA_PRIVATE_KEY}.")
+    else:
+        terminal.data(
+            "Already-public compromised eMudhra intermediate private key (lab material)",
+            CA_PRIVATE_KEY.read_text(),
+        )
 
     terminal.heading(
         3,
@@ -223,6 +232,10 @@ def main():
     )
     if args.dry_run:
         print("The latest redacted traffic record and public-key JSON would be displayed here.")
+    elif run_result.returncode:
+        print("The current request failed. See the container output above for details.")
+        print("Saved response files from earlier runs are not displayed.")
+        return run_result.returncode
     else:
         show_last_json_line(
             terminal, HERE / "logs/proxy/traffic.jsonl", "Latest redacted proxy exchange",

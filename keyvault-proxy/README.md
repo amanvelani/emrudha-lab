@@ -56,7 +56,8 @@ docker --context colima compose down
 ## Guided terminal walkthrough
 
 For an explained terminal UI that pauses at every stage, inspects both
-certificates, runs the containers, and prints the captured request and Key Vault
+certificates, shows the already-public compromised eMudhra intermediate private
+key, runs the containers, and prints the captured request and Key Vault
 public-key response with the bearer token masked:
 
 ```bash
