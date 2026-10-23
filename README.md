@@ -202,6 +202,8 @@ validation in this specific image and configuration.
 
 ## Walkthrough video
 
+[![Preview of the credential-free TLS walkthrough](docs/media/credential-free-probe-preview.png)](docs/media/credential-free-probe.mp4)
+
 [Download or play the 53-second credential-free probe video](docs/media/credential-free-probe.mp4). It is a paced terminal-style rendering of selected output from a live `python3 keyvault-proxy/walkthrough.py --probe --no-pause` run. The probe validated the client certificate chain, verified the proxy's upstream TLS connection, and received the expected HTTP `401` without forwarding an authorization header.
 
 ## Repository layout
