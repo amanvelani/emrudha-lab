@@ -1,0 +1,12 @@
+ARG CLIENT_BASE
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY Client/Client.csproj ./
+RUN dotnet restore Client.csproj
+COPY Client/Program.cs ./
+RUN dotnet publish Client.csproj -c Release --no-restore -o /out -p:UseAppHost=false
+
+FROM ${CLIENT_BASE}
+WORKDIR /app
+COPY --from=build /out/ ./
+ENTRYPOINT ["dotnet", "Client.dll"]

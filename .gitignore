@@ -1,0 +1,19 @@
+# Local CA hierarchy and private keys. Keep all CA material out of Git.
+/ca/
+
+# Generated runtime configuration and TLS material.
+**/.env
+**/tls/
+
+# Short-lived Azure credentials and captured traffic.
+**/secrets/
+**/logs/
+
+# .NET and Python build output.
+**/bin/
+**/obj/
+**/__pycache__/
+*.py[cod]
+
+# macOS metadata.
+.DS_Store

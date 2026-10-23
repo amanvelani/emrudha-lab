@@ -1,0 +1,58 @@
+name: lab-keyvault-proxy
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    user: "${LOCAL_UID:-501}:${LOCAL_GID:-20}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: 0
+    volumes:
+      - ./tls/server.fullchain.pem:/tls/server.fullchain.pem:ro
+      - ./tls/server.key.pem:/tls/server.key.pem:ro
+      - ./logs/proxy:/logs/proxy
+    tmpfs: [/tmp]
+    networks:
+      client_net:
+        ipv4_address: 172.30.67.2
+      egress: {}
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('127.0.0.1',443),2).close()"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        CLIENT_BASE: "${CLIENT_BASE:?Run setup.py first}"
+    user: "${LOCAL_UID:-501}:${LOCAL_GID:-20}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      server:
+        condition: service_healthy
+    extra_hosts:
+      - "labkeyvault1022.vault.azure.net:172.30.67.2"
+    environment:
+      RUN_ONCE: "${RUN_ONCE:-true}"
+      TLS_PROBE_ONLY: "${TLS_PROBE_ONLY:-false}"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    volumes:
+      - ./secrets:/run/secrets:ro
+      - ./logs/client:/logs/client
+    tmpfs: [/tmp]
+    networks: [client_net]
+networks:
+  client_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.67.0/24
+  egress: {}

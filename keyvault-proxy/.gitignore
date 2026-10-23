@@ -1,0 +1,7 @@
+.env
+secrets/
+tls/
+logs/
+**/bin/
+**/obj/
+**/__pycache__/
